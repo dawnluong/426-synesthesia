@@ -107,7 +107,7 @@ class BasicCharacterController {
         const loader = new FBXLoader();
         loader.setPath('./resources/zombie/');
         // loader.load('mremireh_o_desbiens.fbx', (fbx) => {
-        loader.load('walk.fbx', (fbx) => {
+        loader.load('mremireh_o_desbiens.fbx', (fbx) => {
             fbx.scale.setScalar(0.01);
             fbx.traverse((c) => {
                 c.castShadow = true;
@@ -600,7 +600,7 @@ class ThirdPersonCameraDemo {
             '.keys { display: inline:block; font-size: 20px;}' +
             'input { max-height: 30px;}' +
             'hr { color: white;}' +
-            '.box {z-index: 10; position:absolute; top:0; width: 10%}' +
+            '.box {z-index: 10; position:absolute; top:0; width: 20%}' +
             '</style>' +
             '<br>' +
             '<input type="file" class="btn btn-light btn-lg begin-btn box" href="#" role="button" id="begin-btn"></a>' +
