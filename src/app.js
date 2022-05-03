@@ -7,16 +7,8 @@ let song = 'resources/music/AcousticRock.mp3';
 let backgroundColor = 0xffffff;
 let color = 0x0000ff;
 let mode = 'default';
-class BasicCharacterControllerProxy {
-    constructor(animations) {
-        this._animations = animations;
-    }
-
-    get animations() {
-        return this._animations;
-    }
-}
 let going = true;
+
 class Helix {
     constructor(params) {
         this._Init(params);
@@ -72,7 +64,8 @@ class BasicCharacterController {
         this._acceleration = new THREE.Vector3(0.5, 0.125, 25.0);
         this._velocity = new THREE.Vector3(0, 0, 0);
         this._position = new THREE.Vector3();
-        this._animations = {};
+        this._quaternion = new THREE.Quaternion();
+        // this._animations = {};
         this._input = new BasicCharacterControllerInput();
         this._musicData = [];
         this._prevPositions = [];
@@ -96,52 +89,8 @@ class BasicCharacterController {
             this._params.scene.add(this._helices[i]._line);
         }
 
-        this._stateMachine = new CharacterFSM(
-            new BasicCharacterControllerProxy(this._animations)
-        );
-
-        this._LoadModels();
-    }
-
-    _LoadModels() {
-        const loader = new FBXLoader();
-        // loader.setPath('');
-        // loader.load('mremireh_o_desbiens.fbx', (fbx) => {
-        loader.load('./resources/zombie/mremireh_o_desbiens.fbx', (fbx) => {
-            fbx.scale.setScalar(0.01);
-            fbx.traverse((c) => {
-                c.castShadow = true;
-            });
-
-            this._target = fbx;
-            this._params.scene.add(this._target);
-
-            this._mixer = new THREE.AnimationMixer(this._target);
-
-            this._manager = new THREE.LoadingManager();
-            this._manager.onLoad = () => {
-                this._stateMachine.SetState('idle');
-            };
-
-            const _OnLoad = (animName, anim) => {
-                const clip = anim.animations[0];
-                const action = this._mixer.clipAction(clip);
-
-                this._animations[animName] = {
-                    clip: clip,
-                    action: action,
-                };
-            };
-
-            const loader = new FBXLoader(this._manager);
-            loader.setPath('./resources/zombie/');
-            loader.load('walk.fbx', (a) => {
-                _OnLoad('walk', a);
-            });
-            loader.load('idle.fbx', (a) => {
-                _OnLoad('idle', a);
-            });
-        });
+        this._stateMachine = new CharacterFSM();
+        this._stateMachine.SetState('idle');
     }
 
     get Position() {
@@ -149,15 +98,10 @@ class BasicCharacterController {
     }
 
     get Rotation() {
-        if (!this._target) {
-            return new THREE.Quaternion();
-        }
-        return this._target.quaternion;
+        return this._quaternion;
     }
 
     Update(timeInSeconds) {
-        // console.log(this._params._musicData)
-
         if (!this._stateMachine._currentState) {
             return;
         }
@@ -177,10 +121,9 @@ class BasicCharacterController {
 
         velocity.add(frameDecceleration);
 
-        const controlObject = this._target;
         const _Q = new THREE.Quaternion();
         const _A = new THREE.Vector3();
-        const _R = controlObject.quaternion.clone();
+        const _R = this._quaternion.clone();
 
         const acc = this._acceleration.clone();
         if (this._input._keys.shift) {
@@ -223,26 +166,24 @@ class BasicCharacterController {
             _R.multiply(_Q);
         }
 
-        controlObject.quaternion.copy(_R);
+        this._quaternion.copy(_R);
 
         const oldPosition = new THREE.Vector3();
-        oldPosition.copy(controlObject.position);
+        oldPosition.copy(this._position);
 
         const forward = new THREE.Vector3(0, 0, 1);
-        forward.applyQuaternion(controlObject.quaternion);
+        forward.applyQuaternion(this._quaternion);
         forward.normalize();
 
         const sideways = new THREE.Vector3(1, 0, 0);
-        sideways.applyQuaternion(controlObject.quaternion);
+        sideways.applyQuaternion(this._quaternion);
         sideways.normalize();
 
         sideways.multiplyScalar(velocity.x * timeInSeconds);
         forward.multiplyScalar(velocity.z * timeInSeconds);
 
-        controlObject.position.add(forward);
-        controlObject.position.add(sideways);
-
-        this._position.copy(controlObject.position);
+        this._position.add(forward);
+        this._position.add(sideways);
 
         if (this._input._keys.space && going) {
             let P = new THREE.Vector3();
@@ -258,7 +199,7 @@ class BasicCharacterController {
             this._params.time += timeInSeconds;
             let len = this._musicData.length;
             for (let i = 0; i < len; i++) {
-                let color = this.spectrum(i / (len));
+                let color = this.spectrum(i / len);
 
                 let rad = (this._musicData[i] * maxRadius) / 255;
                 if (rad <= 0) {
@@ -424,13 +365,11 @@ class FiniteStateMachine {
             if (prevState.Name == name) {
                 return;
             }
-            prevState.Exit();
         }
 
         const state = new this._states[name](this);
 
         this._currentState = state;
-        state.Enter(prevState);
     }
 
     Update(timeElapsed, input) {
@@ -441,9 +380,9 @@ class FiniteStateMachine {
 }
 
 class CharacterFSM extends FiniteStateMachine {
-    constructor(proxy) {
+    constructor() {
         super();
-        this._proxy = proxy;
+        // this._proxy = proxy;
         this._Init();
     }
 
@@ -458,8 +397,8 @@ class State {
         this._parent = parent;
     }
 
-    Enter() {}
-    Exit() {}
+    // Enter() {}
+    // Exit() {}
     Update() {}
 }
 
@@ -471,28 +410,6 @@ class WalkState extends State {
     get Name() {
         return 'walk';
     }
-
-    Enter(prevState) {
-        const curAction = this._parent._proxy._animations['walk'].action;
-        if (prevState) {
-            const prevAction =
-                this._parent._proxy._animations[prevState.Name].action;
-
-            curAction.enabled = true;
-
-            {
-                curAction.time = 0.0;
-                curAction.setEffectiveTimeScale(1.0);
-                curAction.setEffectiveWeight(1.0);
-            }
-
-            curAction.play();
-        } else {
-            curAction.play();
-        }
-    }
-
-    Exit() {}
 
     Update(timeElapsed, input) {
         if (input._keys.shift) {
@@ -512,21 +429,6 @@ class IdleState extends State {
     get Name() {
         return 'idle';
     }
-
-    Enter(prevState) {
-        const idleAction = this._parent._proxy._animations['idle'].action;
-        if (prevState) {
-            const prevAction =
-                this._parent._proxy._animations[prevState.Name].action;
-            idleAction.time = 0.0;
-            idleAction.enabled = true;
-            idleAction.play();
-        } else {
-            idleAction.play();
-        }
-    }
-
-    Exit() {}
 
     Update(_, input) {
         if (input._keys.space) {
@@ -678,7 +580,6 @@ class ThirdPersonCameraDemo {
         this._camera.add(this._listener);
 
         this._audio = new THREE.Audio(this._listener);
-        // this._audio.setLoop(false)
         // this._file = 'resources/music/AcousticRock.mp3';
         this._mediaElement = new Audio(song);
         this._audio.setMediaElementSource(this._mediaElement);
