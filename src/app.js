@@ -105,9 +105,9 @@ class BasicCharacterController {
 
     _LoadModels() {
         const loader = new FBXLoader();
-        loader.setPath('./resources/zombie/');
+        // loader.setPath('');
         // loader.load('mremireh_o_desbiens.fbx', (fbx) => {
-        loader.load('mremireh_o_desbiens.fbx', (fbx) => {
+        loader.load('./resources/zombie/mremireh_o_desbiens.fbx', (fbx) => {
             fbx.scale.setScalar(0.01);
             fbx.traverse((c) => {
                 c.castShadow = true;
