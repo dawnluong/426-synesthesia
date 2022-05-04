@@ -501,7 +501,7 @@ class ThirdPersonCameraDemo {
             '.keys { display: inline:block; font-size: 20px;}' +
             'input { max-height: 30px;}' +
             'hr { color: white;}' +
-            '.box {z-index: 10; position:absolute; top:0; width: 20%}' +
+            '.box {z-index: 10; position:absolute; top:0; width: 40%}' +
             '</style>' +
             '<br>' +
             '<input type="file" class="btn btn-light btn-lg begin-btn box" href="#" role="button" id="begin-btn"></a>' +
