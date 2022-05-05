@@ -758,7 +758,7 @@ function loadTour(camera) {
     tour.addStep({
         title: 'How to use Synesthesia (:',
         text: 'Synesthesia is an interactive audio visualizer. Using your keyboard as a way to control the visualizer, you can create an art piece for a selected song.<br><br>\
-          <strong style="text-decoration:underline">Before you begin</strong>: Ensure that the device you are using is either a laptop or desktop with a keyboard as a keyboard is needed for user input. You should also be using Chrome as your browser.<br><br>p.s. if this instructions modal is cut in half, refresh your page to fix it (hopefully)',
+          <strong style="text-decoration:underline">Before you begin</strong>: Ensure that the device you are using is either a laptop or desktop with a keyboard as a keyboard is needed for user input. You should also be using Chrome as your browser.<br><br>(try refreshing if this modal is covered)',
         attachTo: { element: '.box', on: 'top' },
         buttons: [
             {
