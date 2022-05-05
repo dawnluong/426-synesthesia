@@ -17,7 +17,7 @@ class SeedScene extends Scene {
             mode: 'default',
             color:  0x0000ff,
             background: 0xffffff,
-            // updateList: [],
+            volume: 0.25,
         };
      
         this.state.gui.add(this.state, 'turns', 0, 8);
@@ -36,6 +36,8 @@ class SeedScene extends Scene {
         var params = {};
         params.background =0xffffff;
         this.state.gui.addColor(this.state, 'background');
+        this.state.gui.add(this.state, 'volume', 0, 1);
+
     }
 }
 

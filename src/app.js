@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import SeedScene from './components/scenes/SeedScene';
+import Shepherd from 'shepherd.js';
+
 let maxRadius = 5;
 let turns = 0;
 let song = 'resources/music/AcousticRock.mp3';
@@ -7,6 +9,7 @@ let backgroundColor = 0xffffff;
 let color = 0x0000ff;
 let mode = 'default';
 let going = true;
+let volume = 0.25;
 
 class Helix {
     constructor(params) {
@@ -136,7 +139,7 @@ class BasicCharacterController {
             _A.set(1, 0, 0);
             _Q.setFromAxisAngle(
                 _A,
-                3.0 * -Math.PI * timeInSeconds * this._acceleration.y
+                2.75 * -Math.PI * timeInSeconds * this._acceleration.y
             );
             _R.multiply(_Q);
         }
@@ -144,7 +147,7 @@ class BasicCharacterController {
             _A.set(1, 0, 0);
             _Q.setFromAxisAngle(
                 _A,
-                3.0 * Math.PI * timeInSeconds * this._acceleration.y
+                2.75 * Math.PI * timeInSeconds * this._acceleration.y
             );
             _R.multiply(_Q);
         }
@@ -152,7 +155,7 @@ class BasicCharacterController {
             _A.set(0, 1, 0);
             _Q.setFromAxisAngle(
                 _A,
-                3.0 * Math.PI * timeInSeconds * this._acceleration.y
+                2.75 * Math.PI * timeInSeconds * this._acceleration.y
             );
             _R.multiply(_Q);
         }
@@ -160,7 +163,7 @@ class BasicCharacterController {
             _A.set(0, 1, 0);
             _Q.setFromAxisAngle(
                 _A,
-                3.0 * -Math.PI * timeInSeconds * this._acceleration.y
+                2.75 * -Math.PI * timeInSeconds * this._acceleration.y
             );
             _R.multiply(_Q);
         }
@@ -395,9 +398,6 @@ class State {
     constructor(parent) {
         this._parent = parent;
     }
-
-    // Enter() {}
-    // Exit() {}
     Update() {}
 }
 
@@ -493,18 +493,72 @@ class ThirdPersonCameraDemo {
 
         document.body.appendChild(this._threejs.domElement);
 
+        var link = document.createElement('link');
+
+        link.rel = 'stylesheet';
+
+        link.type = 'text/css';
+
+        link.href =
+            'https://cdnjs.cloudflare.com/ajax/libs/shepherd.js/8.0.0/css/shepherd.css';
+
+        // Get HTML head element to append
+        // link element to it
+        document.getElementsByTagName('HEAD')[0].appendChild(link);
+        const style = document.createElement('style');
+
+        style.innerHTML = `
+        * {
+            font-family: "Monaco", monospace;
+        }
+        body {    
+            display: block; /* fix necessary to remove space at bottom of canvas */
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100%
+            width: 100%;
+            height: 100%;
+            min-height: 100%;
+            position:relative;
+        }
+        .shepherd-element {
+           background: #fff;
+           border-radius: 0px;
+           max-width: 450px;
+           opacity: 0;
+           transition: opacity .3s,visibility .3s;
+           visibility: hidden;
+           width: 100%;
+       }
+       .shepherd-title {
+           font-size: 24px;
+       }
+       .box {
+            position:fixed;
+            top:0;
+            left:0;
+            width: 100%;
+            height: 100%;
+            margin: 0px;
+            padding: 0px;
+        }
+        #begin-btn{
+            font-size: 16px;
+            width: 15%;
+            background: rgba(0,0,0,0.75);
+            color: #fff;
+            border-radius: 3px;
+            margin: 10px;
+
+        }
+       `;
+        document.head.appendChild(style);
         let box = document.createElement('DIV');
         box.id = 'LoadingPage';
         let html =
-            '<style type="text/css">' +
-            '{ font-family: Comfortaa, Helvetica, san-serif; }' +
-            '.keys { display: inline:block; font-size: 20px;}' +
-            'input { max-height: 30px;}' +
-            'hr { color: white;}' +
-            '.box {z-index: 10; position:absolute; top:0; width: 40%}' +
-            '</style>' +
-            '<br>' +
-            '<input type="file" class="btn btn-light btn-lg begin-btn box" href="#" role="button" id="begin-btn"></a>' +
+            '<div class = "box">' +
+            '<input type="file" class="btn btn-light btn-lg begin-btn" href="#" role="button" id="begin-btn"></a>' +
+            '</div>' +
             '</div>';
 
         box.innerHTML = html;
@@ -518,7 +572,7 @@ class ThirdPersonCameraDemo {
         );
 
         const fov = 60;
-        const aspect = 1920 / 1080;
+        const aspect = window.innerWidth / window.innerHeight;
         const near = 1.0;
         const far = 1000.0;
         this._camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
@@ -526,6 +580,8 @@ class ThirdPersonCameraDemo {
         this._time = 0;
 
         this._scene = new SeedScene();
+        var tour = loadTour(this._scene);
+        tour.start();
         let light = new THREE.DirectionalLight(0xffffff, 1.0);
         light.position.set(-100, 100, 100);
         light.target.position.set(0, 0, 0);
@@ -556,6 +612,7 @@ class ThirdPersonCameraDemo {
             color = this._scene.state.color;
             backgroundColor = this._scene.state.background;
             mode = this._scene.state.mode;
+            volume = this._scene.state.volume;
 
             var files = e.target.files;
             song = URL.createObjectURL(files[0]);
@@ -587,8 +644,10 @@ class ThirdPersonCameraDemo {
             this._audio,
             this._scene.state.fftsize
         );
+        this._audio.setVolume(volume);
     }
     UpdateAudio(timeInSeconds, input) {
+        this._audio.setVolume(volume);
         this._mediaElement.addEventListener('ended', (event) => {
             going = false;
 
@@ -640,6 +699,7 @@ class ThirdPersonCameraDemo {
             turns = this._scene.state.turns;
             color = this._scene.state.color;
             backgroundColor = this._scene.state.background;
+            volume = this._scene.state.volume;
 
             this._scene.background = new THREE.Color(backgroundColor);
             this._RAF();
@@ -666,6 +726,153 @@ class ThirdPersonCameraDemo {
             }
         }
         this._thirdPersonCamera.Update(timeElapsedS);
+    }
+}
+
+// https://github.com/DeegZC/VSKeys.git
+function loadTour(camera) {
+    labelGuiElements(camera);
+    const tour = new Shepherd.Tour({
+        defaultStepOptions: {
+            cancelIcon: { enabled: true },
+            classes: 'shadow-md bg-purple-dark',
+            scrollTo: { behavior: 'smooth', block: 'center' },
+        },
+    });
+    let buttons = [
+        {
+            action() {
+                return tour.back();
+            },
+            classes: 'shepherd-button-secondary',
+            text: 'Back',
+        },
+        {
+            action() {
+                return tour.next();
+            },
+            text: 'Next',
+        },
+    ];
+
+    tour.addStep({
+        title: 'How to use Synesthesia (:',
+        text: 'Synesthesia is an interactive audio visualizer. Using your keyboard as a way to control the visualizer, you can create an art piece for a selected song.<br><br>\
+          <strong style="text-decoration:underline">Before you begin</strong>: Ensure that the device you are using is either a laptop or desktop with a keyboard as a keyboard is needed for user input. You should also be using Chrome as your browser.        ',
+        attachTo: { element: '.box', on: 'top' },
+        buttons: [
+            {
+                action() {
+                    return this.next();
+                },
+                text: 'Next',
+            },
+        ],
+        arrow: false,
+    });
+    tour.addStep({
+        title: 'Spiral Turns',
+        text: 'turns represents the amount of turns the trail makes in a given section of the trail.<br><br>0 = straight path, 8 = tightly wound spiral/more coils',
+        attachTo: { element: '#turns', on: 'left' },
+        buttons: buttons,
+    });
+    tour.addStep({
+        title: 'Max Radius',
+        text: 'radius is the width of trail.',
+        attachTo: { element: '#radius', on: 'left' },
+        buttons: buttons,
+    });
+    tour.addStep({
+        title: 'Mode',
+        text: "There are 3 different visualization modes: default, color-code, and single.<br><br>Default mode considers the different frequencies of the audio at each sample, visualizing each frequency in the domain as a line in the trail.<br><br>Color-code mode is the same as default mode, however, each frequency bin that is represented by a line corresponds to a specific color. The higher frequencies correspond to colors of visible light with higher frequencies, i.e., violet = high frequency, red = low frequency.<br><br>Single mode visualizes the audio using the average frequency of the audio at each point.",
+        attachTo: { element: '#mode', on: 'left' },
+        buttons: buttons,
+    });
+    tour.addStep({
+        title: 'FFT window size',
+        text: "fftsize determines the window size for how much of the audio's frequency data is sampled. A higher fftsize = more samples, which means more lines correlating to different frequencies within the entire trail.<br><br>**Note that this setting will need to be set prior to loading your audio.",
+        attachTo: { element: '#fftsize', on: 'left' },
+        buttons: buttons,
+    });
+    tour.addStep({
+        title: 'Trail Color',
+        text: 'Customize the color of the trail.<br><br>*Note that the color of the trail will not change in color-code mode.',
+        attachTo: { element: '#color', on: 'left' },
+        buttons: buttons,
+    });
+
+    tour.addStep({
+        title: 'Background Color',
+        text: 'Customize the backdrop of your visualizer.',
+        attachTo: { element: '#backgroundcolor', on: 'left' },
+        buttons: buttons,
+    });
+
+    tour.addStep({
+        title: 'Audio Volume',
+        text: 'Adjust the volume to whatever is comfortable for you',
+        attachTo: { element: '#volume', on: 'left' },
+        buttons: buttons,
+    });
+
+    tour.addStep({
+        title: 'Upload Your Audio',
+        text: 'After setting up your settings, choose your audio file by clicking on Choose File in the top left corner. Once your audio has loaded, the visualizer will begin.',
+        attachTo: { element: '.begin-btn', on: 'right' },
+        buttons: buttons,
+        arrow: true,
+    });
+    tour.addStep({
+        title: 'Controls',
+        text: 'To control your visualizer, use WASD to change the direction of the trail.<br>W = up, A = left, S = down, D = right.<br>To pause your visualizer and audio, press SHIFT.<br>To resume your visualizer and audio, press SPACE.',
+        attachTo: { element: '.begin-btn', on: 'right' },
+        buttons: buttons,
+        arrow: true,
+    });
+    tour.addStep({
+        title: 'Finishing Up',
+        text: "Once your audio ends, the visualizer will stop. You can now use WASD to move your camera around and explore the art piece you just created! Just use SHIFT and SPACE to stop and continue moving.<br><br>To create a new art piece or change audio/mode/fftsize, just refresh the page and repeat the steps. Don't forget to take any screenshots of your creation before you refresh!",
+        attachTo: { element: '.begin-btn', on: 'right' },
+        buttons: [
+            {
+                action() {
+                    return this.back();
+                },
+                classes: 'shepherd-button-secondary',
+                text: 'Back',
+            },
+            {
+                action() {
+                    return this.complete();
+                },
+                text: 'Upload Audio and Start!',
+            },
+        ],
+        arrow: true,
+    });
+
+    return tour;
+}
+function labelGuiElements(camera) {
+    let gui = Array.from(
+        camera.state.gui.domElement.getElementsByTagName('li')
+    );
+    //console.log(gui.length);
+    gui = gui.filter((val) => {
+        return val.className != 'folder';
+    });
+    //console.log(gui.length);
+    let idList = [
+        'turns',
+        'radius',
+        'mode',
+        'fftsize',
+        'color',
+        'backgroundcolor',
+        'volume',
+    ];
+    for (let i = 0; i < gui.length; i++) {
+        gui[i].id = idList[i];
     }
 }
 
